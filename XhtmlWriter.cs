@@ -1,11 +1,8 @@
 using System;
-using System.IO;
 using System.Web;
 using System.Diagnostics;
-using System.Collections.Generic;
 using System.Xml;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace XmlMarkdown
 {
