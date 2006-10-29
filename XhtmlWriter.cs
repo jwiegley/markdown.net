@@ -250,6 +250,11 @@ namespace XmlMarkdown
 				writer.WriteEntityRef("nbsp");
 				break;
 
+			case "eos":
+				writer.WriteEntityRef("nbsp");
+				writer.WriteEntityRef("nbsp");
+				break;
+
 			case "hyphen":
 				break;
 
@@ -269,7 +274,9 @@ namespace XmlMarkdown
 				writer.WriteEntityRef("#8230");
 				break;
 			case "emdash":
+				writer.WriteEntityRef("nbsp");
 				writer.WriteEntityRef("#8212");
+				writer.WriteEntityRef("nbsp");
 				break;
 			case "endash":
 				writer.WriteEntityRef("#8211");

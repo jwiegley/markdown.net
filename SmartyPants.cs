@@ -264,6 +264,8 @@ namespace XmlMarkdown
 		}
 
 		private static Regex wikiLinkRe = new Regex("^[A-Z][a-z]+[A-Z][a-z]+$");
+		private static Regex sentEndRe  = new Regex("(^|\\s+)(pp?|Drs?|Mrs?|Ms)\\.$");
+		private static Regex capOrDigRe = new Regex("^[A-Z0-9]");
 
 		private static void AppendText(XmlMarkdown doc, XmlNode context,
 									   ref StringBuilder accum)
@@ -287,6 +289,43 @@ namespace XmlMarkdown
 		{
 			AppendText(doc, context, ref accum);
 			context.AppendChild(node);
+		}
+
+		private static void AppendSentenceEnd(List<Tokenizer.Token> tokens,
+											  ref int index, ref Tokenizer.Token tok,
+											  XmlMarkdown doc, XmlNode context,
+											  ref StringBuilder accum)
+		{
+			// Test whether this is a sentence-ending period.
+			if (index + 1 == tokens.Count) {
+				return;
+			}
+			else if (tokens[index + 1].TokenKind == Tokenizer.Token.Kind.Whitespace) {
+				if (index + 2 == tokens.Count) {
+					index++;
+					return;
+				}
+
+				Tokenizer.Token ntok = tokens[index + 2];
+				if (ntok.TokenKind == Tokenizer.Token.Kind.BackQuote ||
+					ntok.TokenKind == Tokenizer.Token.Kind.SingleQuote ||
+					ntok.TokenKind == Tokenizer.Token.Kind.DoubleQuote ||
+					ntok.TokenKind == Tokenizer.Token.Kind.OpenDoubleQuote) {
+					AppendSpecial(XmlMarkdown.SpecialKind.EndOfSentence,
+								  doc, context, ref accum);
+					tok = ntok;
+					index++;
+					return;
+				}
+
+				if (capOrDigRe.IsMatch(ntok.Content) &&
+					! sentEndRe.IsMatch(accum.ToString())) {
+					AppendSpecial(XmlMarkdown.SpecialKind.EndOfSentence,
+								  doc, context, ref accum);
+					tok = ntok;
+					index++;
+				}
+			}
 		}
 
 		private static void ProcessTokens(List<Tokenizer.Token> tokens,
@@ -343,18 +382,25 @@ namespace XmlMarkdown
 				case Tokenizer.Token.Kind.Ellipsis:
 					AppendSpecial(XmlMarkdown.SpecialKind.Ellipsis,
 								  doc, context, ref accum);
+					AppendSentenceEnd(tokens, ref i, ref tok,
+									  doc, context, ref accum);
 					break;
+
 				case Tokenizer.Token.Kind.UnbreakableSpace:
 					AppendSpecial(XmlMarkdown.SpecialKind.UnbreakableSpace,
 								  doc, context, ref accum);
 					break;
+
 				case Tokenizer.Token.Kind.OpenDoubleQuote:
 					AppendSpecial(XmlMarkdown.SpecialKind.OpenDoubleQuote,
 								  doc, context, ref accum);
 					break;
+
 				case Tokenizer.Token.Kind.CloseDoubleQuote:
 					AppendSpecial(XmlMarkdown.SpecialKind.CloseDoubleQuote,
 								  doc, context, ref accum);
+					AppendSentenceEnd(tokens, ref i, ref tok,
+									  doc, context, ref accum);
 					break;
 
 				case Tokenizer.Token.Kind.SingleQuote:
@@ -367,6 +413,8 @@ namespace XmlMarkdown
 					else if (i + 1 == tokens.Count) {
 						AppendSpecial(XmlMarkdown.SpecialKind.CloseSingleQuote,
 									  doc, context, ref accum);
+						AppendSentenceEnd(tokens, ref i, ref tok,
+										  doc, context, ref accum);
 						break;
 					}
 					else {
@@ -382,6 +430,8 @@ namespace XmlMarkdown
 						case Tokenizer.Token.Kind.Whitespace:
 							AppendSpecial(XmlMarkdown.SpecialKind.CloseSingleQuote,
 										  doc, context, ref accum);
+							AppendSentenceEnd(tokens, ref i, ref tok,
+											  doc, context, ref accum);
 							break;
 						default:
 							accum.Append(tok.Content);
@@ -397,14 +447,29 @@ namespace XmlMarkdown
 									  doc, context, ref accum);
 						break;
 					}
+					else if (lastToken != null &&
+							 (lastToken.TokenKind == Tokenizer.Token.Kind.QuestionMark ||
+							  lastToken.TokenKind == Tokenizer.Token.Kind.ExclamationMark ||
+							  lastToken.TokenKind == Tokenizer.Token.Kind.Ellipsis ||
+							  lastToken.TokenKind == Tokenizer.Token.Kind.Period)) {
+						AppendSpecial(XmlMarkdown.SpecialKind.CloseDoubleQuote,
+									  doc, context, ref accum);
+						AppendSentenceEnd(tokens, ref i, ref tok,
+										  doc, context, ref accum);
+						break;
+					}
 					else if (i + 1 == tokens.Count) {
 						AppendSpecial(XmlMarkdown.SpecialKind.CloseDoubleQuote,
 									  doc, context, ref accum);
+						AppendSentenceEnd(tokens, ref i, ref tok,
+										  doc, context, ref accum);
 						break;
 					}
 					else {
 						Tokenizer.Token.Kind kind = tokens[i + 1].TokenKind;
 						switch (kind) {
+						case Tokenizer.Token.Kind.Whitespace:
+						case Tokenizer.Token.Kind.UnbreakableSpace:
 						case Tokenizer.Token.Kind.QuestionMark:
 						case Tokenizer.Token.Kind.ExclamationMark:
 						case Tokenizer.Token.Kind.Comma:
@@ -412,9 +477,16 @@ namespace XmlMarkdown
 						case Tokenizer.Token.Kind.Semicolon:
 						case Tokenizer.Token.Kind.Colon:
 						case Tokenizer.Token.Kind.CloseParen:
-						case Tokenizer.Token.Kind.Whitespace:
+						case Tokenizer.Token.Kind.SingleQuote:
+						case Tokenizer.Token.Kind.SingleDash:
+						case Tokenizer.Token.Kind.DoubleDash:
+						case Tokenizer.Token.Kind.TripleDash:
+						case Tokenizer.Token.Kind.Ellipsis:
+						case Tokenizer.Token.Kind.Referral:
 							AppendSpecial(XmlMarkdown.SpecialKind.CloseDoubleQuote,
 										  doc, context, ref accum);
+							AppendSentenceEnd(tokens, ref i, ref tok,
+											  doc, context, ref accum);
 							break;
 						default:
 							accum.Append(tok.Content);
@@ -425,15 +497,20 @@ namespace XmlMarkdown
 
 				case Tokenizer.Token.Kind.SingleDash:
 				case Tokenizer.Token.Kind.BackQuote:
-				case Tokenizer.Token.Kind.QuestionMark:
-				case Tokenizer.Token.Kind.ExclamationMark:
 				case Tokenizer.Token.Kind.Comma:
-				case Tokenizer.Token.Kind.Period:
 				case Tokenizer.Token.Kind.Semicolon:
 				case Tokenizer.Token.Kind.Colon:
 				case Tokenizer.Token.Kind.OpenParen:
-				case Tokenizer.Token.Kind.CloseParen:
 					accum.Append(tok.Content);
+					break;
+
+				case Tokenizer.Token.Kind.QuestionMark:
+				case Tokenizer.Token.Kind.ExclamationMark:
+				case Tokenizer.Token.Kind.CloseParen:
+				case Tokenizer.Token.Kind.Period:
+					accum.Append(tok.Content);
+					AppendSentenceEnd(tokens, ref i, ref tok,
+									  doc, context, ref accum);
 					break;
 
 				case Tokenizer.Token.Kind.Text:
@@ -500,10 +577,10 @@ namespace XmlMarkdown
 					break;
 				}
 
-				AppendText(doc, context, ref accum);
-
 				lastToken = tok;
 			}
+
+			AppendText(doc, context, ref accum);
 		}
 
 		public static void Transform(XmlMarkdown doc, XmlNode context)

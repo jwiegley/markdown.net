@@ -1,4 +1,4 @@
-# $Revision$
+// $Revision$
 
 using System;
 using System.IO;
@@ -41,8 +41,6 @@ namespace XmlMarkdown
 	
 	public class XmlMarkdown
 	{
-		public static string XmlMarkdownNS = "http://www.firstlightsoftware.com";
-
 		public static Regex headingRe  = new Regex("^(#+)\\s+(.+?)(\\s+#+)?\\s*$");
 		public static Regex uheadingRe = new Regex("^[=-]+\\s*$");
 		public static Regex rulerRe    =
@@ -62,8 +60,6 @@ namespace XmlMarkdown
 			new Regex("^( ? ? ?\\[([^]]+)\\]:\\s*)(?:(\\S+)(\\s+\"([^\"]+)\")?)?");
 		public static Regex linkRe     =
 			new Regex("^\\[(.+?)\\](\\(([^ \t\")]+)?(\\s*\"(.+?)\")?\\)|\\s*\\[([^]]*)\\])");
-		//public static Regex sentEndRe  =
-		//  new Regex("\\<(pp?|Drs?|Mrs?|Ms)?\\.\\s+[A-Z0-9`'\"]");
 
 		private TextReader Reader;
 		private int		   LinkIndex;
@@ -306,6 +302,7 @@ namespace XmlMarkdown
 		public enum SpecialKind {
 			HardReturn,
 			UnbreakableSpace,
+			EndOfSentence,
 			HyphenationClue,
 			OpenDoubleQuote,
 			CloseDoubleQuote,
@@ -325,6 +322,9 @@ namespace XmlMarkdown
 				break;
 			case SpecialKind.UnbreakableSpace:
 				tag = "space";
+				break;
+			case SpecialKind.EndOfSentence:
+				tag = "eos";
 				break;
 			case SpecialKind.HyphenationClue:
 				tag = "hyphen";
@@ -1519,8 +1519,14 @@ namespace XmlMarkdown
 				case '_':
 				case '*':
 					XmlNode span = contextStack.Peek();
-					if (! char.IsWhiteSpace(lastChar) ||
-						(i + 1 < text.Length && char.IsWhiteSpace(text[i + 1]))) {
+					bool opening = true;
+					if (lastChar != '@' && ! char.IsWhiteSpace(lastChar))
+						opening = false;
+
+					if ((opening && i + 1 < text.Length &&
+						 char.IsWhiteSpace(text[i + 1])) ||
+						(! opening && i + 1 < text.Length &&
+						 char.IsLetterOrDigit(text[i + 1]))) {
 						textBuf.Append(c);
 						break;
 					}
@@ -1538,7 +1544,7 @@ namespace XmlMarkdown
 						}
 					}
 
-					if (KindOfInline(span) == InlineKind.NotInline) {
+					if (opening) {
 						contextStack.Push(NewInline(style));
 					} else {
 						contextStack.Pop();
@@ -1703,12 +1709,18 @@ namespace XmlMarkdown
 			Configuration config = new Configuration();
 			config.UseSmartyPants = useSmartyPants;
 
+			FileInfo info = new FileInfo(args[0]);
+			if (! info.Exists) {
+				Console.WriteLine("File '" + args[0] + "' does not exist!");
+				return 1;
+			}
+
 			XmlMarkdown doc = XmlMarkdown.ReadFromFile(args[0], config);
 
 			TextWriter outStream = Console.Out;
 
 			if (outputFile != null) {
-				FileInfo info = new FileInfo(outputFile);
+				info = new FileInfo(outputFile);
 				if (info.Exists)
 					info.Delete();
 
