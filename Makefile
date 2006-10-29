@@ -15,7 +15,7 @@ INSTDIR=$(HOME)/Sites/johnw/App_Code
 install: xmlmd.exe
 	cvs commit -m changes
 	cp $(XMLMD_SOURCES) $(INSTDIR)
-	(cd $(INSTDIR); make test) && open ~/Applications/Network/Unison.app
+	(cd $(INSTDIR)/..; make test) && open ~/Applications/Network/Unison.app
 
 clean:
 	rm *.exe *.mdb

@@ -41,6 +41,8 @@ namespace XmlMarkdown
 	
 	public class XmlMarkdown
 	{
+		public static string Version = "$Revision$";
+
 		public static Regex headingRe  = new Regex("^(#+)\\s+(.+?)(\\s+#+)?\\s*$");
 		public static Regex uheadingRe = new Regex("^[=-]+\\s*$");
 		public static Regex rulerRe    =
