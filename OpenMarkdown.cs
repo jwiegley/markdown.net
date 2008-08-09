@@ -1,4 +1,4 @@
-// $Revision$
+// $Revision: 217 $
 
 using System;
 using System.IO;
@@ -8,7 +8,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 
-namespace XmlMarkdown
+namespace OpenMarkdown
 {
 	public class Configuration
 	{
@@ -39,9 +39,9 @@ namespace XmlMarkdown
 		public bool   IsDefined;
 	}
 	
-	public class XmlMarkdown
+	public class OpenMarkdown
 	{
-		public static string Version = "$Revision$";
+		public static string Version = "$Revision: 217 $";
 
 		public static Regex headingRe  = new Regex("^(#+)\\s+(.+?)(\\s+#+)?\\s*$");
 		public static Regex uheadingRe = new Regex("^[=-]+\\s*$");
@@ -81,7 +81,7 @@ namespace XmlMarkdown
 		private Stack<string>  lines;
 		private Stack<XmlNode> blocks;
 
-		public XmlMarkdown(Configuration Config) {
+		public OpenMarkdown(Configuration Config) {
 			this.Config = Config;
 			Reset();
 		}
@@ -377,13 +377,13 @@ namespace XmlMarkdown
 			Footnotes = new List<XmlNode>();
 		}
 
-		public static XmlMarkdown Parse(TextReader reader)
+		public static OpenMarkdown Parse(TextReader reader)
 		{
 			return Parse(reader, new Configuration());
 		}
-		public static XmlMarkdown Parse(TextReader reader, Configuration Config)
+		public static OpenMarkdown Parse(TextReader reader, Configuration Config)
 		{
-			XmlMarkdown MMD = new XmlMarkdown(Config);
+			OpenMarkdown MMD = new OpenMarkdown(Config);
 			MMD.Reader = reader;
 
 			XmlDocument doc = new XmlDocument();
@@ -1072,7 +1072,7 @@ namespace XmlMarkdown
 			}
 
 			//
-			// Meta data (for XmlMarkdown)
+			// Meta data (for OpenMarkdown)
 			//
 
 			if (! Config.PlainMarkdown && FirstBlock) {
@@ -1321,7 +1321,7 @@ namespace XmlMarkdown
 
 							i += index - 1;
 						}
-						catch (Exception Ex) {
+						catch (Exception) {
 							bool quoted = false;
 							int j;
 							for (j = i; j < text.Length; j++) {
@@ -1574,19 +1574,19 @@ namespace XmlMarkdown
 				SmartyPants.Transform(this, context);
 		}
 
-		public static XmlMarkdown ReadFromFile(string path, Encoding code,
+		public static OpenMarkdown ReadFromFile(string path, Encoding code,
 												 Configuration config) {
 			using (StreamReader reader = new StreamReader(path, code))
 				return Parse(reader, config);
 		}
-		public static XmlMarkdown ReadFromFile(string path, Configuration config) {
+		public static OpenMarkdown ReadFromFile(string path, Configuration config) {
 			return ReadFromFile(path, Encoding.UTF8, config);
 		}
 
-		public static XmlMarkdown ReadFromFile(string path, Encoding code) {
+		public static OpenMarkdown ReadFromFile(string path, Encoding code) {
 			return ReadFromFile(path, code, new Configuration());
 		}
-		public static XmlMarkdown ReadFromFile(string path) {
+		public static OpenMarkdown ReadFromFile(string path) {
 			return ReadFromFile(path, new Configuration());
 		}
 
@@ -1601,7 +1601,7 @@ namespace XmlMarkdown
 		public static string ToXml(string text, Configuration config)
 		{
 			using (StringReader reader = new StringReader(text)) {
-				XmlMarkdown doc = Parse(reader, config);
+				OpenMarkdown doc = Parse(reader, config);
 				StringWriter sw = new StringWriter();
 				XmlTextWriter xw = new XmlTextWriter(sw);
 				doc.Document.WriteTo(xw);
@@ -1620,7 +1620,7 @@ namespace XmlMarkdown
 		public static string ToIndentedXml(string text, Configuration config)
 		{
 			using (StringReader reader = new StringReader(text)) {
-				XmlMarkdown doc = Parse(reader, config);
+				OpenMarkdown doc = Parse(reader, config);
 				StringWriter sw = new StringWriter();
 				XmlTextWriter xw = new XmlTextWriter(sw);
 				xw.Formatting = Formatting.Indented;
@@ -1640,7 +1640,7 @@ namespace XmlMarkdown
 		public static string ToXhtml(string text, Configuration config)
 		{
 			using (StringReader reader = new StringReader(text)) {
-				XmlMarkdown doc = Parse(reader, config);
+				OpenMarkdown doc = Parse(reader, config);
 				XhtmlWriter xhw = new XhtmlWriter(doc);
 				StringWriter sw = new StringWriter();
 				XmlTextWriter xw = new XmlTextWriter(sw);
@@ -1660,7 +1660,7 @@ namespace XmlMarkdown
 		public static string ToIndentedXhtml(string text, Configuration config)
 		{
 			using (StringReader reader = new StringReader(text)) {
-				XmlMarkdown doc = Parse(reader, config);
+				OpenMarkdown doc = Parse(reader, config);
 				XhtmlWriter xhw = new XhtmlWriter(doc);
 				StringWriter sw = new StringWriter();
 				XmlTextWriter xw = new XmlTextWriter(sw);
@@ -1717,7 +1717,7 @@ namespace XmlMarkdown
 				return 1;
 			}
 
-			XmlMarkdown doc = XmlMarkdown.ReadFromFile(args[0], config);
+			OpenMarkdown doc = OpenMarkdown.ReadFromFile(args[0], config);
 
 			TextWriter outStream = Console.Out;
 

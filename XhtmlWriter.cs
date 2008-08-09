@@ -4,15 +4,15 @@ using System.Diagnostics;
 using System.Xml;
 using System.Text;
 
-namespace XmlMarkdown
+namespace OpenMarkdown
 {
 	public class XhtmlWriter
 	{
-		public XmlMarkdown Document;
+		public OpenMarkdown Document;
 
 		public bool UseClasses = true;
 
-		public XhtmlWriter(XmlMarkdown doc) {
+		public XhtmlWriter(OpenMarkdown doc) {
 			this.Document = doc;
 		}
 

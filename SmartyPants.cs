@@ -6,7 +6,7 @@ using System.Xml;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace XmlMarkdown
+namespace OpenMarkdown
 {
 	public class SmartyPants
 	{
@@ -267,7 +267,7 @@ namespace XmlMarkdown
 		private static Regex sentEndRe  = new Regex("(^|\\s+)(pp?|Drs?|Mrs?|Ms)\\.$");
 		private static Regex capOrDigRe = new Regex("^[A-Z0-9]");
 
-		private static void AppendText(XmlMarkdown doc, XmlNode context,
+		private static void AppendText(OpenMarkdown doc, XmlNode context,
 									   ref StringBuilder accum)
 		{
 			if (accum.Length > 0) {
@@ -276,15 +276,15 @@ namespace XmlMarkdown
 			}
 		}
 
-		private static void AppendSpecial(XmlMarkdown.SpecialKind kind,
-										  XmlMarkdown doc, XmlNode context,
+		private static void AppendSpecial(OpenMarkdown.SpecialKind kind,
+										  OpenMarkdown doc, XmlNode context,
 										  ref StringBuilder accum)
 		{
 			AppendText(doc, context, ref accum);
 			context.AppendChild(doc.NewSpecial(kind));
 		}
 
-		private static void AppendNode(XmlNode node, XmlMarkdown doc, XmlNode context,
+		private static void AppendNode(XmlNode node, OpenMarkdown doc, XmlNode context,
 									   ref StringBuilder accum)
 		{
 			AppendText(doc, context, ref accum);
@@ -293,7 +293,7 @@ namespace XmlMarkdown
 
 		private static void AppendSentenceEnd(List<Tokenizer.Token> tokens,
 											  ref int index, ref Tokenizer.Token tok,
-											  XmlMarkdown doc, XmlNode context,
+											  OpenMarkdown doc, XmlNode context,
 											  ref StringBuilder accum)
 		{
 			// Test whether this is a sentence-ending period.
@@ -311,7 +311,7 @@ namespace XmlMarkdown
 					ntok.TokenKind == Tokenizer.Token.Kind.SingleQuote ||
 					ntok.TokenKind == Tokenizer.Token.Kind.DoubleQuote ||
 					ntok.TokenKind == Tokenizer.Token.Kind.OpenDoubleQuote) {
-					AppendSpecial(XmlMarkdown.SpecialKind.EndOfSentence,
+					AppendSpecial(OpenMarkdown.SpecialKind.EndOfSentence,
 								  doc, context, ref accum);
 					tok = ntok;
 					index++;
@@ -320,7 +320,7 @@ namespace XmlMarkdown
 
 				if (capOrDigRe.IsMatch(ntok.Content) &&
 					! sentEndRe.IsMatch(accum.ToString())) {
-					AppendSpecial(XmlMarkdown.SpecialKind.EndOfSentence,
+					AppendSpecial(OpenMarkdown.SpecialKind.EndOfSentence,
 								  doc, context, ref accum);
 					tok = ntok;
 					index++;
@@ -329,11 +329,11 @@ namespace XmlMarkdown
 		}
 
 		private static void ProcessTokens(List<Tokenizer.Token> tokens,
-										  XmlMarkdown doc, XmlNode context)
+										  OpenMarkdown doc, XmlNode context)
 		{
 			// Reset the elements list, and then restore what it should look
 			// like from the token stream
-			XmlMarkdown.StripChildNodes(context);
+			OpenMarkdown.StripChildNodes(context);
 
 			StringBuilder accum = new StringBuilder();
 
@@ -356,11 +356,11 @@ namespace XmlMarkdown
 					switch (doc.Config.DashesStyle) {
 					case Configuration.SmartyDashes.DoubleEmdashNoEndash:
 					case Configuration.SmartyDashes.DoubleEmdashTripleEndash:
-						AppendSpecial(XmlMarkdown.SpecialKind.Emdash,
+						AppendSpecial(OpenMarkdown.SpecialKind.Emdash,
 									  doc, context, ref accum);
 						break;
 					case Configuration.SmartyDashes.TripleEmdashDoubleEndash:
-						AppendSpecial(XmlMarkdown.SpecialKind.Endash,
+						AppendSpecial(OpenMarkdown.SpecialKind.Endash,
 									  doc, context, ref accum);
 						break;
 					}
@@ -369,35 +369,35 @@ namespace XmlMarkdown
 				case Tokenizer.Token.Kind.TripleDash:
 					switch (doc.Config.DashesStyle) {
 					case Configuration.SmartyDashes.DoubleEmdashTripleEndash:
-						AppendSpecial(XmlMarkdown.SpecialKind.Endash,
+						AppendSpecial(OpenMarkdown.SpecialKind.Endash,
 									  doc, context, ref accum);
 						break;
 					case Configuration.SmartyDashes.TripleEmdashDoubleEndash:
-						AppendSpecial(XmlMarkdown.SpecialKind.Emdash,
+						AppendSpecial(OpenMarkdown.SpecialKind.Emdash,
 									  doc, context, ref accum);
 						break;
 					}
 					break;
 
 				case Tokenizer.Token.Kind.Ellipsis:
-					AppendSpecial(XmlMarkdown.SpecialKind.Ellipsis,
+					AppendSpecial(OpenMarkdown.SpecialKind.Ellipsis,
 								  doc, context, ref accum);
 					AppendSentenceEnd(tokens, ref i, ref tok,
 									  doc, context, ref accum);
 					break;
 
 				case Tokenizer.Token.Kind.UnbreakableSpace:
-					AppendSpecial(XmlMarkdown.SpecialKind.UnbreakableSpace,
+					AppendSpecial(OpenMarkdown.SpecialKind.UnbreakableSpace,
 								  doc, context, ref accum);
 					break;
 
 				case Tokenizer.Token.Kind.OpenDoubleQuote:
-					AppendSpecial(XmlMarkdown.SpecialKind.OpenDoubleQuote,
+					AppendSpecial(OpenMarkdown.SpecialKind.OpenDoubleQuote,
 								  doc, context, ref accum);
 					break;
 
 				case Tokenizer.Token.Kind.CloseDoubleQuote:
-					AppendSpecial(XmlMarkdown.SpecialKind.CloseDoubleQuote,
+					AppendSpecial(OpenMarkdown.SpecialKind.CloseDoubleQuote,
 								  doc, context, ref accum);
 					AppendSentenceEnd(tokens, ref i, ref tok,
 									  doc, context, ref accum);
@@ -406,12 +406,12 @@ namespace XmlMarkdown
 				case Tokenizer.Token.Kind.SingleQuote:
 					if (lastToken == null ||
 						lastToken.TokenKind == Tokenizer.Token.Kind.Whitespace) {
-						AppendSpecial(XmlMarkdown.SpecialKind.OpenSingleQuote,
+						AppendSpecial(OpenMarkdown.SpecialKind.OpenSingleQuote,
 									  doc, context, ref accum);
 						break;
 					}
 					else if (i + 1 == tokens.Count) {
-						AppendSpecial(XmlMarkdown.SpecialKind.CloseSingleQuote,
+						AppendSpecial(OpenMarkdown.SpecialKind.CloseSingleQuote,
 									  doc, context, ref accum);
 						AppendSentenceEnd(tokens, ref i, ref tok,
 										  doc, context, ref accum);
@@ -428,7 +428,7 @@ namespace XmlMarkdown
 						case Tokenizer.Token.Kind.Colon:
 						case Tokenizer.Token.Kind.CloseParen:
 						case Tokenizer.Token.Kind.Whitespace:
-							AppendSpecial(XmlMarkdown.SpecialKind.CloseSingleQuote,
+							AppendSpecial(OpenMarkdown.SpecialKind.CloseSingleQuote,
 										  doc, context, ref accum);
 							AppendSentenceEnd(tokens, ref i, ref tok,
 											  doc, context, ref accum);
@@ -443,7 +443,7 @@ namespace XmlMarkdown
 				case Tokenizer.Token.Kind.DoubleQuote:
 					if (lastToken == null ||
 						lastToken.TokenKind == Tokenizer.Token.Kind.Whitespace) {
-						AppendSpecial(XmlMarkdown.SpecialKind.OpenDoubleQuote,
+						AppendSpecial(OpenMarkdown.SpecialKind.OpenDoubleQuote,
 									  doc, context, ref accum);
 						break;
 					}
@@ -452,14 +452,14 @@ namespace XmlMarkdown
 							  lastToken.TokenKind == Tokenizer.Token.Kind.ExclamationMark ||
 							  lastToken.TokenKind == Tokenizer.Token.Kind.Ellipsis ||
 							  lastToken.TokenKind == Tokenizer.Token.Kind.Period)) {
-						AppendSpecial(XmlMarkdown.SpecialKind.CloseDoubleQuote,
+						AppendSpecial(OpenMarkdown.SpecialKind.CloseDoubleQuote,
 									  doc, context, ref accum);
 						AppendSentenceEnd(tokens, ref i, ref tok,
 										  doc, context, ref accum);
 						break;
 					}
 					else if (i + 1 == tokens.Count) {
-						AppendSpecial(XmlMarkdown.SpecialKind.CloseDoubleQuote,
+						AppendSpecial(OpenMarkdown.SpecialKind.CloseDoubleQuote,
 									  doc, context, ref accum);
 						AppendSentenceEnd(tokens, ref i, ref tok,
 										  doc, context, ref accum);
@@ -483,7 +483,7 @@ namespace XmlMarkdown
 						case Tokenizer.Token.Kind.TripleDash:
 						case Tokenizer.Token.Kind.Ellipsis:
 						case Tokenizer.Token.Kind.Referral:
-							AppendSpecial(XmlMarkdown.SpecialKind.CloseDoubleQuote,
+							AppendSpecial(OpenMarkdown.SpecialKind.CloseDoubleQuote,
 										  doc, context, ref accum);
 							AppendSentenceEnd(tokens, ref i, ref tok,
 											  doc, context, ref accum);
@@ -538,11 +538,11 @@ namespace XmlMarkdown
 							switch (doc.Config.DashesStyle) {
 							case Configuration.SmartyDashes.DoubleEmdashNoEndash:
 							case Configuration.SmartyDashes.DoubleEmdashTripleEndash:
-								AppendSpecial(XmlMarkdown.SpecialKind.Emdash,
+								AppendSpecial(OpenMarkdown.SpecialKind.Emdash,
 											  doc, context, ref accum);
 								break;
 							case Configuration.SmartyDashes.TripleEmdashDoubleEndash:
-								AppendSpecial(XmlMarkdown.SpecialKind.Endash,
+								AppendSpecial(OpenMarkdown.SpecialKind.Endash,
 											  doc, context, ref accum);
 								break;
 							}
@@ -552,11 +552,11 @@ namespace XmlMarkdown
 						case Tokenizer.Token.Kind.TripleDash:
 							switch (doc.Config.DashesStyle) {
 							case Configuration.SmartyDashes.DoubleEmdashTripleEndash:
-								AppendSpecial(XmlMarkdown.SpecialKind.Endash,
+								AppendSpecial(OpenMarkdown.SpecialKind.Endash,
 											  doc, context, ref accum);
 								break;
 							case Configuration.SmartyDashes.TripleEmdashDoubleEndash:
-								AppendSpecial(XmlMarkdown.SpecialKind.Emdash,
+								AppendSpecial(OpenMarkdown.SpecialKind.Emdash,
 											  doc, context, ref accum);
 								break;
 							}
@@ -583,7 +583,7 @@ namespace XmlMarkdown
 			AppendText(doc, context, ref accum);
 		}
 
-		public static void Transform(XmlMarkdown doc, XmlNode context)
+		public static void Transform(OpenMarkdown doc, XmlNode context)
 		{
 			List<Tokenizer.Token> tokens = new List<Tokenizer.Token>();
 			
@@ -598,7 +598,7 @@ namespace XmlMarkdown
 						tokens.Add(tok);
 				} else {
 					tokens.Add(new Tokenizer.Token(elem));
-					if (XmlMarkdown.KindOfInline(elem) != XmlMarkdown.InlineKind.Literal)
+					if (OpenMarkdown.KindOfInline(elem) != OpenMarkdown.InlineKind.Literal)
 						Transform(doc, elem);
 				}
 			}
